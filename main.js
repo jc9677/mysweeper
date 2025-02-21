@@ -12,6 +12,13 @@ const overlay = document.getElementById('overlay');
 const overlayMessage = document.getElementById('message');
 const closeOverlay = document.getElementById('closeOverlay');
 
+// Add reset button functionality to clear local storage and reload the game
+const resetButton = document.getElementById('reset');
+resetButton.addEventListener('click', () => {
+  localStorage.removeItem('minesweeperState');
+  location.reload();
+});
+
 let board = [];
 let rows, cols, bombs;
 let gameActive = false; // Track game state
@@ -178,6 +185,9 @@ startButton.addEventListener('click', () => {
 // Initialize game from saved state if available
 if (savedState) {
   loadGameState();
+} else {
+  // Create default game with 10 rows, 10 cols, and 15 bombs
+  createBoard(10, 10, 15);
 }
 
 function showOverlay(text) {
