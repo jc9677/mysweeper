@@ -6,6 +6,7 @@ const CELL_FLAGGED = 0b100;
 
 let boardState;
 let adjacentCounts;
+let previousBoardState;
 
 // Check if there's a saved game state
 const savedState = localStorage.getItem('minesweeperState');
@@ -39,6 +40,7 @@ function createBoard(r, c, b) {
   // Use Uint8Array for efficient storage
   boardState = new Uint8Array(r * c);
   adjacentCounts = new Uint8Array(r * c);
+  previousBoardState = new Uint8Array(r * c);
 
   // Place bombs
   let bombsPlaced = 0;
@@ -103,7 +105,7 @@ function handleCellClick(e) {
   const j = index % cols;
   
   if (!(boardState[index] & CELL_FLAGGED)) {
-    revealCell(i, j);
+    revealCell(i, j, false);
   }
 }
 
@@ -146,24 +148,29 @@ function handleTouchMove() {
 function renderBoard() {
   const cells = gameBoard.children;
   for (let i = 0; i < rows * cols; i++) {
-    const cell = cells[i];
-    cell.className = 'cell';
-    cell.textContent = '';
-    
-    if (boardState[i] & CELL_REVEALED) {
-      cell.classList.add('revealed');
-      if (boardState[i] & CELL_BOMB) {
-        cell.textContent = '💣';
-      } else if (adjacentCounts[i] > 0) {
-        cell.textContent = adjacentCounts[i];
+    // Only update cells that changed state
+    if (boardState[i] !== previousBoardState[i]) {
+      const cell = cells[i];
+      cell.className = 'cell';
+      cell.textContent = '';
+      
+      if (boardState[i] & CELL_REVEALED) {
+        cell.classList.add('revealed');
+        if (boardState[i] & CELL_BOMB) {
+          cell.textContent = '💣';
+        } else if (adjacentCounts[i] > 0) {
+          cell.textContent = adjacentCounts[i];
+        }
+      } else if (boardState[i] & CELL_FLAGGED) {
+        cell.textContent = '🚩';
       }
-    } else if (boardState[i] & CELL_FLAGGED) {
-      cell.textContent = '🚩';
+      
+      previousBoardState[i] = boardState[i];
     }
   }
 }
 
-function revealCell(i, j) {
+function revealCell(i, j, isRecursive = false) {
   const index = i * cols + j;
   if (i < 0 || i >= rows || j < 0 || j >= cols) return;
   if (boardState[index] & (CELL_REVEALED | CELL_FLAGGED)) return;
@@ -186,14 +193,17 @@ function revealCell(i, j) {
     for (let x = -1; x <= 1; x++) {
       for (let y = -1; y <= 1; y++) {
         if (x === 0 && y === 0) continue;
-        revealCell(i + x, j + y);
+        revealCell(i + x, j + y, true);
       }
     }
   }
   
-  renderBoard();
-  saveGameState();
-  checkWinCondition();
+  // Only render and save if this is the initial reveal call
+  if (!isRecursive) {
+    renderBoard();
+    saveGameState();
+    checkWinCondition();
+  }
 }
 
 function checkWinCondition() {
@@ -226,6 +236,7 @@ function loadGameState() {
     bombs = state.bombs;
     boardState = new Uint8Array(state.boardState);
     adjacentCounts = new Uint8Array(state.adjacentCounts);
+    previousBoardState = new Uint8Array(state.boardState);
     rowsInput.value = rows;
     colsInput.value = cols;
     bombsInput.value = bombs;
