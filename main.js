@@ -21,6 +21,41 @@ const overlayMessage = document.getElementById('message');
 const closeOverlay = document.getElementById('closeOverlay');
 const debugElement = document.getElementById('debug');
 
+// Add settings-related elements
+const settingsButton = document.getElementById('settings');
+const settingsOverlay = document.getElementById('settings-overlay');
+const closeSettings = document.getElementById('closeSettings');
+const showDebugCheckbox = document.getElementById('show-debug');
+
+// Load debug preference from localStorage
+let showDebug = localStorage.getItem('showDebug') === 'true';
+showDebugCheckbox.checked = showDebug;
+debugElement.classList.toggle('visible', showDebug);
+
+// Handle settings button click
+settingsButton.addEventListener('click', () => {
+  settingsOverlay.classList.remove('hidden');
+});
+
+// Handle settings close button
+closeSettings.addEventListener('click', () => {
+  settingsOverlay.classList.add('hidden');
+});
+
+// Handle debug checkbox changes
+showDebugCheckbox.addEventListener('change', (e) => {
+  showDebug = e.target.checked;
+  localStorage.setItem('showDebug', showDebug);
+  debugElement.classList.toggle('visible', showDebug);
+});
+
+// Close settings overlay on escape or clicking outside
+settingsOverlay.addEventListener('click', (e) => {
+  if (e.target === settingsOverlay) {
+    settingsOverlay.classList.add('hidden');
+  }
+});
+
 // Add reset button functionality to clear local storage and reload the game
 const resetButton = document.getElementById('reset');
 resetButton.addEventListener('click', () => {
@@ -134,7 +169,7 @@ let longPressTimeout;
 let isLongPressDetected = false;
 
 function debug(message) {
-  if (debugElement) {
+  if (debugElement && showDebug) {
     debugElement.textContent = message + '\n' + debugElement.textContent;
     // Keep only last 10 lines
     debugElement.textContent = debugElement.textContent.split('\n').slice(0, 10).join('\n');

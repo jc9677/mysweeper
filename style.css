@@ -161,3 +161,54 @@ body {
   max-height: 100px;
   overflow-y: auto;
 }
+
+.game-controls button {
+  padding: 5px 10px;
+  font-size: 16px;
+  border: none;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.game-controls button:hover {
+  background-color: #45a049;
+}
+
+#reset {
+  background-color: #f44336;
+}
+
+#reset:hover {
+  background-color: #d32f2f;
+}
+
+#settings {
+  background-color: #2196F3;
+}
+
+#settings:hover {
+  background-color: #1976D2;
+}
+
+.settings-content {
+  padding: 10px 20px;
+}
+
+.settings-content label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.settings-content input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.debug-overlay.visible {
+  display: block;
+}

@@ -14,6 +14,7 @@
     <label>Bombs: <input type="number" id="bombs" value="15" min="1" /></label>
     <button id="start">Start Game</button>
     <button id="reset">Reset Game</button>
+    <button id="settings">⚙️ Settings</button>
   </div>
   <div id="status" style="margin-bottom: 10px; font-size: 18px; font-weight: bold; color: #333;"></div>
 
@@ -25,8 +26,22 @@
     </div>
   </div>
 
+  <!-- Added settings overlay -->
+  <div id="settings-overlay" class="overlay hidden">
+    <div class="overlay-content">
+      <span id="closeSettings" class="close-btn">X</span>
+      <h3>Settings</h3>
+      <div class="settings-content">
+        <label>
+          <input type="checkbox" id="show-debug" />
+          Show Debug Log
+        </label>
+      </div>
+    </div>
+  </div>
+
   <div id="game-board"></div>
-  <div id="debug" class="debug-overlay"></div>
+  <div id="debug" class="debug-overlay hidden"></div>
   <script type="module" src="/main.js"></script>
 </body>
 </html>
