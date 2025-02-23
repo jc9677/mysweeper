@@ -160,6 +160,7 @@ function renderBoard() {
           cell.textContent = '💣';
         } else if (adjacentCounts[i] > 0) {
           cell.textContent = adjacentCounts[i];
+          cell.classList.add(`number-${adjacentCounts[i]}`);
         }
       } else if (boardState[i] & CELL_FLAGGED) {
         cell.textContent = '🚩';
