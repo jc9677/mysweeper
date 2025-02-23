@@ -33,6 +33,7 @@ function createBoard(r, c, b) {
   board = Array.from({ length: r }, (_, i) => Array.from({ length: c }, (_, j) => ({
     bomb: false,
     revealed: false,
+    flagged: false,
     adjacent: 0,
     row: i,
     col: j
@@ -72,7 +73,6 @@ function createBoard(r, c, b) {
 }
 
 function renderBoard() {
-  // Clear existing board
   gameBoard.innerHTML = '';
   gameBoard.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
 
@@ -82,6 +82,7 @@ function renderBoard() {
       cell.classList.add('cell');
       cell.dataset.row = i;
       cell.dataset.col = j;
+      
       if (board[i][j].revealed) {
         cell.classList.add('revealed');
         if (board[i][j].bomb) {
@@ -89,21 +90,55 @@ function renderBoard() {
         } else if (board[i][j].adjacent > 0) {
           cell.textContent = board[i][j].adjacent;
         }
+      } else if (board[i][j].flagged) {
+        cell.textContent = '🚩';
       }
-      cell.addEventListener('click', () => {
-        if (gameActive) {
+
+      // Click handler for revealing cells
+      cell.addEventListener('click', (e) => {
+        if (gameActive && !board[i][j].flagged) {
           revealCell(i, j);
         }
       });
+
+      // Right click handler for desktop
+      cell.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (gameActive && !board[i][j].revealed) {
+          board[i][j].flagged = !board[i][j].flagged;
+          renderBoard();
+          saveGameState();
+        }
+      });
+
+      // Long press handler for mobile
+      let longPressTimer;
+      cell.addEventListener('touchstart', (e) => {
+        if (!gameActive || board[i][j].revealed) return;
+        longPressTimer = setTimeout(() => {
+          board[i][j].flagged = !board[i][j].flagged;
+          renderBoard();
+          saveGameState();
+        }, 500);
+      });
+
+      cell.addEventListener('touchend', () => {
+        clearTimeout(longPressTimer);
+      });
+
+      cell.addEventListener('touchmove', () => {
+        clearTimeout(longPressTimer);
+      });
+
       gameBoard.appendChild(cell);
     }
   }
 }
 
 function revealCell(i, j) {
-  // Avoid out-of-bound or already revealed
+  // Avoid out-of-bound, already revealed, or flagged cells
   if (i < 0 || i >= rows || j < 0 || j >= cols) return;
-  if (board[i][j].revealed) return;
+  if (board[i][j].revealed || board[i][j].flagged) return;
   
   board[i][j].revealed = true;
 
