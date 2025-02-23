@@ -142,9 +142,15 @@ function revealCell(i, j) {
   
   board[i][j].revealed = true;
 
-  // If bomb, lose immediately
+  // If bomb, reveal all cells and lose
   if (board[i][j].bomb) {
     gameActive = false;
+    // Reveal all cells
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        board[row][col].revealed = true;
+      }
+    }
     renderBoard();
     saveGameState();
     showOverlay('Game Over! You hit a bomb!');
