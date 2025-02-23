@@ -19,6 +19,7 @@ const bombsInput = document.getElementById('bombs');
 const overlay = document.getElementById('overlay');
 const overlayMessage = document.getElementById('message');
 const closeOverlay = document.getElementById('closeOverlay');
+const debugElement = document.getElementById('debug');
 
 // Add reset button functionality to clear local storage and reload the game
 const resetButton = document.getElementById('reset');
@@ -88,12 +89,13 @@ function setupBoard() {
     gameBoard.appendChild(cell);
   }
 
-  // Use event delegation
+  // Use event delegation with passive: false for all touch events
   gameBoard.addEventListener('click', handleCellClick);
   gameBoard.addEventListener('contextmenu', handleCellRightClick);
-  gameBoard.addEventListener('touchstart', handleTouchStart);
-  gameBoard.addEventListener('touchend', handleTouchEnd);
-  gameBoard.addEventListener('touchmove', handleTouchMove);
+  gameBoard.addEventListener('touchstart', handleTouchStart, { passive: false });
+  gameBoard.addEventListener('touchend', handleTouchEnd, { passive: false });
+  gameBoard.addEventListener('touchmove', handleTouchMove, { passive: false });
+  gameBoard.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 }
 
 function handleCellClick(e) {
@@ -122,27 +124,136 @@ function handleCellRightClick(e) {
   }
 }
 
-let longPressTimer;
+let touchStartTime;
+let touchStartX;
+let touchStartY;
+let touchCell;
+const LONG_PRESS_DURATION = 300; // Reduced from 500ms
+const TOUCH_MOVE_THRESHOLD = 40; // Increased to 40px to be much less sensitive
+let longPressTimeout;
+let isLongPressDetected = false;
+
+function debug(message) {
+  if (debugElement) {
+    debugElement.textContent = message + '\n' + debugElement.textContent;
+    // Keep only last 10 lines
+    debugElement.textContent = debugElement.textContent.split('\n').slice(0, 10).join('\n');
+  }
+}
+
 function handleTouchStart(e) {
+  e.preventDefault(); // Prevent default touch behaviors
   const cell = e.target.closest('.cell');
   if (!cell || !gameActive) return;
   
   const index = parseInt(cell.dataset.index);
   if (boardState[index] & CELL_REVEALED) return;
   
-  longPressTimer = setTimeout(() => {
-    boardState[index] ^= CELL_FLAGGED;
-    renderBoard();
-    saveGameState();
-  }, 500);
+  touchCell = cell;
+  touchStartTime = Date.now();
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  isLongPressDetected = false;
+  
+  cell.classList.add('pressing');
+  debug('Touch start, waiting for long press...');
+  
+  // Short vibration to indicate touch start
+  if (navigator.vibrate) {
+    navigator.vibrate(10);
+  }
+
+  // Set timeout for long press
+  longPressTimeout = setTimeout(() => {
+    debug('Long press detected!');
+    if (touchCell && !(boardState[index] & CELL_REVEALED)) {
+      isLongPressDetected = true;
+      if (navigator.vibrate) {
+        navigator.vibrate([50, 50, 50]);
+      }
+    }
+  }, LONG_PRESS_DURATION);
 }
 
-function handleTouchEnd() {
-  clearTimeout(longPressTimer);
+function handleTouchEnd(e) {
+  e.preventDefault();
+  if (!touchCell || !gameActive) return;
+  
+  clearTimeout(longPressTimeout);
+  touchCell.classList.remove('pressing');
+  debug('Touch end, isLongPress: ' + isLongPressDetected);
+  
+  const index = parseInt(touchCell.dataset.index);
+  
+  // Calculate if there was significant movement
+  const touchX = e.changedTouches[0].clientX;
+  const touchY = e.changedTouches[0].clientY;
+  const moveDistance = Math.sqrt(
+    Math.pow(touchX - touchStartX, 2) + 
+    Math.pow(touchY - touchStartY, 2)
+  );
+  
+  debug('Move distance: ' + moveDistance.toFixed(2));
+  
+  if (moveDistance < TOUCH_MOVE_THRESHOLD) {
+    if (isLongPressDetected) {
+      debug('Placing flag');
+      // Long press - toggle flag
+      if (!(boardState[index] & CELL_REVEALED)) {
+        boardState[index] ^= CELL_FLAGGED;
+        renderBoard();
+        saveGameState();
+      }
+    } else {
+      debug('Revealing cell');
+      // Short press - reveal cell with short vibration
+      if (!(boardState[index] & CELL_FLAGGED)) {
+        if (navigator.vibrate) {
+          navigator.vibrate(20);
+        }
+        const i = Math.floor(index / cols);
+        const j = index % cols;
+        revealCell(i, j, false);
+      }
+    }
+  }
+  
+  touchCell = null;
+  touchStartTime = null;
+  isLongPressDetected = false;
 }
 
-function handleTouchMove() {
-  clearTimeout(longPressTimer);
+function handleTouchMove(e) {
+  e.preventDefault();
+  if (!touchCell) return;
+  
+  const touchX = e.touches[0].clientX;
+  const touchY = e.touches[0].clientY;
+  const moveDistance = Math.sqrt(
+    Math.pow(touchX - touchStartX, 2) + 
+    Math.pow(touchY - touchStartY, 2)
+  );
+  
+  debug('Touch move, distance: ' + moveDistance.toFixed(2));
+  
+  // Only clear timeout if movement exceeds threshold
+  if (moveDistance > TOUCH_MOVE_THRESHOLD) {
+    clearTimeout(longPressTimeout);
+    touchCell.classList.remove('pressing');
+    touchCell = null;
+    touchStartTime = null;
+    isLongPressDetected = false;
+  }
+}
+
+function handleTouchCancel() {
+  if (touchCell) {
+    clearTimeout(longPressTimeout);
+    touchCell.classList.remove('pressing');
+    touchCell = null;
+    touchStartTime = null;
+    isLongPressDetected = false;
+  }
 }
 
 function renderBoard() {

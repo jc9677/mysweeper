@@ -75,6 +75,10 @@ body {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.cell.pressing {
+  background: #e0e0e0;
+}
+
 .number-1 { color: #2ecc71; }  /* Green */
 .number-2 { color: #3498db; }  /* Blue */
 .number-3 { color: #e74c3c; }  /* Red */
@@ -139,4 +143,21 @@ body {
     gap: 10px;
     justify-content: center;
   }
+}
+
+.debug-overlay {
+  position: fixed;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  max-width: 80%;
+  z-index: 1000;
+  white-space: pre;
+  max-height: 100px;
+  overflow-y: auto;
 }
