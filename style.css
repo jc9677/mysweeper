@@ -213,6 +213,9 @@ body {
 
 .settings-content {
   padding: 10px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .settings-content label {
@@ -225,6 +228,16 @@ body {
 .settings-content input[type="checkbox"] {
   width: 16px;
   height: 16px;
+}
+
+.settings-button {
+  padding: 8px 15px;
+  font-size: 16px;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
 }
 
 .debug-overlay.visible {
