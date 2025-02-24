@@ -9,12 +9,16 @@
 </head>
 <body>
   <div class="game-controls">
-    <label>Rows: <input type="number" id="rows" value="10" min="5" max="30" /></label>
-    <label>Columns: <input type="number" id="cols" value="10" min="5" max="30" /></label>
-    <label>Bombs: <input type="number" id="bombs" value="15" min="1" /></label>
-    <button id="start">Start Game</button>
-    <button id="reset">Reset Game</button>
-    <button id="settings">⚙️ Settings</button>
+    <div class="input-controls">
+      <label>Rows: <input type="number" id="rows" value="10" min="5" max="30" /></label>
+      <label>Columns: <input type="number" id="cols" value="10" min="5" max="30" /></label>
+      <label>Bombs: <input type="number" id="bombs" value="15" min="1" /></label>
+    </div>
+    <div class="button-controls">
+      <button id="reset">Reset Game</button>
+      <button id="settings">⚙️ Settings</button>
+      <button id="start">Start Game</button>
+    </div>
   </div>
   <div id="status" style="margin-bottom: 10px; font-size: 18px; font-weight: bold; color: #333;"></div>
 
