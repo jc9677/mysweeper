@@ -45,13 +45,7 @@ body {
 }
 
 #start {
-  padding: 5px 10px;
-  font-size: 16px;
-  border: none;
   background-color: #4caf50;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
 #start:hover {
@@ -189,6 +183,10 @@ body {
   border-radius: 4px;
   cursor: pointer;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .game-controls button:hover {
@@ -209,6 +207,13 @@ body {
 
 #settings:hover {
   background-color: #1976D2;
+}
+
+/* Remove any default spacing around the emoji */
+#settings .emoji {
+  margin: 0;
+  padding: 0;
+  line-height: 1;
 }
 
 .settings-content {
