@@ -1,4 +1,4 @@
-// Constants
+// Constants 
 const CELL_REVEALED = 0b1;
 const CELL_BOMB = 0b10;
 const CELL_FLAGGED = 0b100;

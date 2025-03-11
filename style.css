@@ -29,7 +29,7 @@ body {
   display: flex;
   align-items: center;
   white-space: nowrap;
-  width: 140px; /* Set fixed width for consistent alignment */
+  width: 140px; /* Set fixed width for consistent alignment  */
   justify-content: space-between; /* Pushes label text and input apart */
 }
 
