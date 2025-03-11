@@ -14,6 +14,11 @@ let rows, cols, bombs;
 let gameActive = false;
 let isFirstMove = true;
 
+// Timer variables
+let timerInterval = null;
+let elapsedSeconds = 0;
+let timerActive = false;
+
 // DOM-dependent code inside DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   // DOM elements
@@ -31,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const settingsOverlay = document.getElementById('settings-overlay');
   const closeSettings = document.getElementById('closeSettings');
   const showDebugCheckbox = document.getElementById('show-debug');
+  const timerDisplay = document.getElementById('timer');
 
   // Check if there's a saved game state
   const savedState = localStorage.getItem('minesweeperState');
@@ -84,6 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
   gameContainer.addEventListener('touchend', handleTouchEndZoom, { passive: true });
   gameContainer.addEventListener('touchcancel', handleTouchCancelZoom, { passive: true });
 
+  // Add visibility change event listeners for timer pause/resume
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('focus', resumeTimer);
+  window.addEventListener('blur', pauseTimer);
+
   // Start button event listener
   startButton.addEventListener('click', () => {
     rows = parseInt(rowsInput.value);
@@ -94,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showOverlay('Number of bombs must be less than rows x columns');
       return;
     }
+    resetTimer();
     createBoard(rows, cols, bombs);
   });
 
@@ -227,6 +239,9 @@ document.addEventListener('DOMContentLoaded', () => {
     boardState = new Uint8Array(r * c);
     adjacentCounts = new Uint8Array(r * c);
     previousBoardState = new Uint8Array(r * c);
+
+    // Start the timer
+    resetTimer();
 
     // We'll place bombs after first click
     // No need to calculate adjacent bombs yet either
@@ -486,6 +501,9 @@ document.addEventListener('DOMContentLoaded', () => {
       isFirstMove = false;
       placeBombsSafely(i, j);
       calculateAdjacentCounts();
+
+      // Start the timer on first move
+      startTimer();
     }
 
     boardState[index] |= CELL_REVEALED;
@@ -591,8 +609,68 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     gameActive = false;
+    stopTimer(); // Stop the timer on win
     saveGameState();
     showOverlay('Congratulations! You win!');
+  }
+
+  // Timer functions
+  function startTimer() {
+    if (!timerActive) {
+      timerActive = true;
+      timerInterval = setInterval(updateTimer, 1000);
+      updateTimerDisplay(); // Update immediately
+    }
+  }
+
+  function stopTimer() {
+    timerActive = false;
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function resetTimer() {
+    stopTimer();
+    elapsedSeconds = 0;
+    updateTimerDisplay();
+  }
+
+  function pauseTimer() {
+    if (timerActive) {
+      stopTimer();
+      // Keep elapsedSeconds as is, just stop incrementing
+    }
+  }
+
+  function resumeTimer() {
+    if (gameActive && !isFirstMove && !timerActive) {
+      startTimer();
+    }
+  }
+
+  function updateTimer() {
+    if (timerActive) {
+      elapsedSeconds++;
+      updateTimerDisplay();
+    }
+  }
+
+  function updateTimerDisplay() {
+    if (timerDisplay) {
+      const minutes = Math.floor(elapsedSeconds / 60);
+      const seconds = elapsedSeconds % 60;
+      timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+  }
+
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      pauseTimer();
+    } else {
+      resumeTimer();
+    }
   }
 
   function saveGameState() {
@@ -602,7 +680,9 @@ document.addEventListener('DOMContentLoaded', () => {
       bombs,
       boardState: Array.from(boardState),
       adjacentCounts: Array.from(adjacentCounts),
-      isFirstMove
+      isFirstMove,
+      elapsedSeconds,
+      gameActive
     };
     localStorage.setItem('minesweeperState', JSON.stringify(state));
   }
@@ -617,11 +697,22 @@ document.addEventListener('DOMContentLoaded', () => {
       adjacentCounts = new Uint8Array(state.adjacentCounts);
       previousBoardState = new Uint8Array(state.boardState);
       isFirstMove = state.isFirstMove !== undefined ? state.isFirstMove : false;
+      elapsedSeconds = state.elapsedSeconds || 0;
+      gameActive = state.gameActive !== undefined ? state.gameActive : false;
+
       rowsInput.value = rows;
       colsInput.value = cols;
       bombsInput.value = bombs;
       setupBoard();
       renderBoard();
+
+      // Update timer display
+      updateTimerDisplay();
+
+      // Resume timer if game is active and not the first move
+      if (gameActive && !isFirstMove && document.visibilityState === 'visible') {
+        startTimer();
+      }
     }
   }
 
