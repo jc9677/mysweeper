@@ -12,6 +12,7 @@ let isDragging = false;
 let startX, startY, scrollLeft, scrollTop;
 let rows, cols, bombs;
 let gameActive = false;
+let isFirstMove = true;
 
 // DOM-dependent code inside DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -219,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cols = c;
     bombs = b;
     gameActive = true; // start game
+    isFirstMove = true; // reset first move flag
     document.getElementById('status').textContent = ""; // clear status
 
     // Use Uint8Array for efficient storage
@@ -226,34 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
     adjacentCounts = new Uint8Array(r * c);
     previousBoardState = new Uint8Array(r * c);
 
-    // Place bombs
-    let bombsPlaced = 0;
-    while (bombsPlaced < b) {
-      const idx = Math.floor(Math.random() * (r * c));
-      if (!(boardState[idx] & CELL_BOMB)) {
-        boardState[idx] |= CELL_BOMB;
-        bombsPlaced++;
-      }
-    }
-
-    // Calculate adjacent bombs
-    for (let i = 0; i < r; i++) {
-      for (let j = 0; j < c; j++) {
-        if (boardState[i * c + j] & CELL_BOMB) continue;
-        let count = 0;
-        for (let x = -1; x <= 1; x++) {
-          for (let y = -1; y <= 1; y++) {
-            if (x === 0 && y === 0) continue;
-            const newRow = i + x;
-            const newCol = j + y;
-            if (newRow >= 0 && newRow < r && newCol >= 0 && newCol < c) {
-              if (boardState[newRow * c + newCol] & CELL_BOMB) count++;
-            }
-          }
-        }
-        adjacentCounts[i * c + j] = count;
-      }
-    }
+    // We'll place bombs after first click
+    // No need to calculate adjacent bombs yet either
 
     setupBoard();
     renderBoard();
@@ -505,6 +481,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (i < 0 || i >= rows || j < 0 || j >= cols) return;
     if (boardState[index] & (CELL_REVEALED | CELL_FLAGGED)) return;
 
+    // Handle first move safety
+    if (isFirstMove && !isRecursive) {
+      isFirstMove = false;
+      placeBombsSafely(i, j);
+      calculateAdjacentCounts();
+    }
+
     boardState[index] |= CELL_REVEALED;
 
     if (boardState[index] & CELL_BOMB) {
@@ -536,6 +519,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Function to place bombs safely after first click
+  function placeBombsSafely(clickedRow, clickedCol) {
+    // Create a list of safe cells - the clicked cell and its neighbors
+    const safeCells = new Set();
+    for (let x = -1; x <= 1; x++) {
+      for (let y = -1; y <= 1; y++) {
+        const newRow = clickedRow + x;
+        const newCol = clickedCol + y;
+        if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+          safeCells.add(newRow * cols + newCol);
+        }
+      }
+    }
+
+    // Create a list of all possible cells
+    const availableCells = [];
+    for (let i = 0; i < rows * cols; i++) {
+      if (!safeCells.has(i)) {
+        availableCells.push(i);
+      }
+    }
+
+    // Check if we have enough cells for bombs
+    if (bombs >= availableCells.length) {
+      bombs = Math.max(1, availableCells.length - 1);
+    }
+
+    // Place bombs randomly in available cells
+    let bombsPlaced = 0;
+    while (bombsPlaced < bombs) {
+      if (availableCells.length === 0) break; // Safety check
+
+      // Select a random index from available cells
+      const randomIndex = Math.floor(Math.random() * availableCells.length);
+      const cellIndex = availableCells[randomIndex];
+
+      // Place bomb and remove from available cells
+      boardState[cellIndex] |= CELL_BOMB;
+      availableCells.splice(randomIndex, 1);
+      bombsPlaced++;
+    }
+  }
+
+  // Calculate adjacent bombs - extracted to a separate function
+  function calculateAdjacentCounts() {
+    for (let i = 0; i < rows; i++) {
+      for (let j = 0; j < cols; j++) {
+        const index = i * cols + j;
+        if (boardState[index] & CELL_BOMB) continue;
+        let count = 0;
+        for (let x = -1; x <= 1; x++) {
+          for (let y = -1; y <= 1; y++) {
+            if (x === 0 && y === 0) continue;
+            const newRow = i + x;
+            const newCol = j + y;
+            if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+              if (boardState[newRow * cols + newCol] & CELL_BOMB) count++;
+            }
+          }
+        }
+        adjacentCounts[index] = count;
+      }
+    }
+  }
+
   function checkWinCondition() {
     for (let i = 0; i < rows * cols; i++) {
       if (!(boardState[i] & CELL_BOMB) && !(boardState[i] & CELL_REVEALED)) {
@@ -553,7 +601,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cols,
       bombs,
       boardState: Array.from(boardState),
-      adjacentCounts: Array.from(adjacentCounts)
+      adjacentCounts: Array.from(adjacentCounts),
+      isFirstMove
     };
     localStorage.setItem('minesweeperState', JSON.stringify(state));
   }
@@ -567,6 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
       boardState = new Uint8Array(state.boardState);
       adjacentCounts = new Uint8Array(state.adjacentCounts);
       previousBoardState = new Uint8Array(state.boardState);
+      isFirstMove = state.isFirstMove !== undefined ? state.isFirstMove : false;
       rowsInput.value = rows;
       colsInput.value = cols;
       bombsInput.value = bombs;
