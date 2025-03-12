@@ -289,3 +289,25 @@ body {
   min-width: 70px;
   text-align: center;
 }
+
+/* Add bombs counter styles */
+#bombs-container {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 10px 0;
+  font-family: monospace;
+}
+
+#bombs-remaining {
+  padding: 5px 10px;
+  background-color: #333;
+  color: #0f0;
+  border-radius: 4px;
+  display: inline-block;
+  min-width: 30px;
+  text-align: center;
+}
+
+#bombs-remaining.negative {
+  color: #f00;
+}

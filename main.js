@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start the timer
     resetTimer();
+    updateBombsRemaining(); // Add this line
 
     // We'll place bombs after first click
     // No need to calculate adjacent bombs yet either
@@ -249,6 +250,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupBoard();
     renderBoard();
     saveGameState();
+  }
+
+  // Add this new function
+  function updateBombsRemaining() {
+    const flagsPlaced = Array.from(boardState).filter(cell => cell & CELL_FLAGGED).length;
+    const remaining = bombs - flagsPlaced;
+    const display = document.getElementById('bombs-remaining');
+    display.textContent = remaining;
+    display.classList.toggle('negative', remaining < 0);
   }
 
   function setupBoard() {
@@ -329,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!(boardState[index] & CELL_REVEALED)) {
       boardState[index] ^= CELL_FLAGGED;
       renderBoard();
+      updateBombsRemaining(); // Add this line
       saveGameState();
     }
   }
@@ -705,6 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
       bombsInput.value = bombs;
       setupBoard();
       renderBoard();
+      updateBombsRemaining(); // Add this line
 
       // Update timer display
       updateTimerDisplay();
