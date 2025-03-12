@@ -422,6 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!(boardState[index] & CELL_REVEALED)) {
           boardState[index] ^= CELL_FLAGGED;
           renderBoard();
+          updateBombsRemaining(); // Add this line
           saveGameState();
         }
       } else {
