@@ -10,20 +10,22 @@
 </head>
 <body>
   <div class="game-controls">
-    <div class="input-controls">
+    <div class="controls-row top-row">
       <label><i class="fas fa-arrows-alt-v"></i> <input type="number" id="rows" value="10" min="5" max="30" /></label>
       <label><i class="fas fa-arrows-alt-h"></i> <input type="number" id="cols" value="10" min="5" max="30" /></label>
       <label>💣 <input type="number" id="bombs" value="15" min="1" /></label>
+      <button id="settings"><span class="emoji">⚙</span></button>
     </div>
-    <div class="button-controls">
-      <button id="settings"><span class="emoji">⚙</span> Settings</button>
+    <div class="controls-row">
       <button id="start">Start Game</button>
     </div>
-    <div id="timer-container">
-      <span id="timer">00:00</span>
-    </div>
-    <div id="bombs-container">
-      <span id="bombs-remaining">0</span> 💣
+    <div class="controls-row">
+      <div id="timer-container">
+        <span id="timer">00:00</span>
+      </div>
+      <div id="bombs-container">
+        <span id="bombs-remaining">0</span> 💣
+      </div>
     </div>
   </div>
   <div id="status" style="margin-bottom: 10px; font-size: 18px; font-weight: bold; color: #333;"></div>
