@@ -32,11 +32,33 @@ body {
 }
 
 #settings {
-  width: 40px;
-  height: 40px;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  background: none;
+  border: none;
   padding: 0;
-  min-width: 40px;
-  aspect-ratio: 1;
+  margin: 0;
+  width: auto;
+  height: auto;
+  min-width: unset;
+}
+
+#settings:hover {
+  transform: rotate(45deg);
+  color: #333;
+  background: none;
+}
+
+/* Remove these conflicting styles */
+#settings.emoji,
+.game-controls #settings {
+  background: none;
+}
+
+#settings.emoji {
+  display: none;
 }
 
 #start {
@@ -54,10 +76,6 @@ body {
 /* Remove conflicting styles */
 .input-controls, .button-controls, .top-controls, .mid-controls, .bottom-controls {
   display: none;
-}
-
-#settings .emoji {
-  font-size: 20px;
 }
 
 @media (max-width: 480px) {
@@ -350,4 +368,35 @@ body {
 
 #bombs-remaining.negative {
   color: #f00;
+}
+
+/* Override any button styles for the settings icon */
+#settings, 
+#settings:hover,
+.game-controls #settings,
+.game-controls #settings:hover {
+  background: none;
+  border: none;
+  padding: 0;
+  width: auto;
+  height: auto;
+  min-width: unset;
+  color: #666;
+}
+
+#settings {
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+#settings:hover {
+  transform: rotate(45deg);
+  color: #333;
+}
+
+/* Remove the generic button hover that's affecting the settings icon */
+.game-controls button:hover {
+  background-color: #45a049;
+  color: white;
 }
