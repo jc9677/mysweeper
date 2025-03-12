@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>💣</text></svg>" />
   <title>Minesweeper</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <div class="game-controls">
     <div class="input-controls">
-      <label>Rows: <input type="number" id="rows" value="10" min="5" max="30" /></label>
-      <label>Columns: <input type="number" id="cols" value="10" min="5" max="30" /></label>
-      <label>Bombs: <input type="number" id="bombs" value="15" min="1" /></label>
+      <label><i class="fas fa-arrows-alt-v"></i> <input type="number" id="rows" value="10" min="5" max="30" /></label>
+      <label><i class="fas fa-arrows-alt-h"></i> <input type="number" id="cols" value="10" min="5" max="30" /></label>
+      <label>💣 <input type="number" id="bombs" value="15" min="1" /></label>
     </div>
     <div class="button-controls">
       <button id="settings"><span class="emoji">⚙</span> Settings</button>

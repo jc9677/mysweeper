@@ -29,8 +29,14 @@ body {
   display: flex;
   align-items: center;
   white-space: nowrap;
-  width: 140px; /* Set fixed width for consistent alignment  */
-  justify-content: space-between; /* Pushes label text and input apart */
+  width: 100px;  /* Reduced from 140px since we're using icons */
+  justify-content: space-between;
+  gap: 10px;  /* Add gap between icon and input */
+}
+
+.game-controls label i {
+  width: 20px;  /* Give icons consistent width */
+  text-align: center;
 }
 
 .game-controls input {
