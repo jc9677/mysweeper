@@ -264,8 +264,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function setupBoard() {
     gameBoard.innerHTML = '';
     gameBoard.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
-    gameBoard.style.transform = 'scale(1)';  // Reset transform
-
+    gameBoard.style.transform = 'scale(1)';  // Reset transform initially
+    
     // Create cells once
     for (let i = 0; i < rows * cols; i++) {
       const cell = document.createElement('div');
@@ -273,22 +273,31 @@ document.addEventListener('DOMContentLoaded', () => {
       cell.dataset.index = i;
       gameBoard.appendChild(cell);
     }
-
+    
     // Calculate initial scale after cells are created
     requestAnimationFrame(() => {
       const container = document.getElementById('game-container');
-      const containerWidth = container.clientWidth - 40;
+      const containerWidth = container.clientWidth - 40; // Leave some margin
       const containerHeight = container.clientHeight - 40;
       const boardWidth = cols * 30;
       const boardHeight = rows * 30;
-
-      scale = Math.min(
-        containerWidth / boardWidth,
-        containerHeight / boardHeight,
-        1
-      );
-
+      
+      // Calculate scale based on width with a small buffer (0.9) to ensure it's not too tight
+      // We specifically want to prioritize fitting the width, not height
+      scale = (containerWidth / boardWidth) * 0.9;
+      
+      // Cap the scale between 0.5 and 2
+      scale = Math.min(scale, 2);  
+      scale = Math.max(scale, 0.5);
+      
+      // Apply the calculated scale
       gameBoard.style.transform = `scale(${scale})`;
+      
+      // Center the board in the container after scaling
+      const scaledWidth = boardWidth * scale;
+      const scaledHeight = boardHeight * scale;
+      container.scrollLeft = (scaledWidth - containerWidth) / 2;
+      container.scrollTop = (scaledHeight - containerHeight) / 2;
     });
 
     // Use event delegation with passive: false for all touch events
@@ -298,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     gameBoard.addEventListener('touchend', handleTouchEnd, { passive: false });
     gameBoard.addEventListener('touchmove', handleTouchMove, { passive: false });
     gameBoard.addEventListener('touchcancel', handleTouchCancel, { passive: false });
-
+    
     // Prevent default touch events on the container to avoid conflicts
     gameContainer.addEventListener('touchstart', (e) => {
       if (e.touches.length > 1) return; // Allow multi-finger gestures for zoom
