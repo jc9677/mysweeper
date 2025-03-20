@@ -26,6 +26,15 @@ body {
   width: 100%;
 }
 
+.controls-row.button-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.controls-row.button-row button {
+  flex: 1;
+}
+
 .top-row {
   justify-content: center;
   flex-wrap: wrap;
@@ -125,6 +134,99 @@ body {
   align-items: flex-start;
   padding: 20px;
   box-sizing: border-box;
+  transition: filter 0.3s ease;
+}
+
+.game-container.paused {
+  filter: blur(15px);
+  pointer-events: none;
+}
+
+.pause-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  pointer-events: none; /* Changed to never block clicks */
+}
+
+.pause-overlay.visible {
+  display: flex;
+  pointer-events: auto;
+}
+
+.pause-message {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+#resume-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#resume-button:hover {
+  background-color: #45a049;
+}
+
+#pause-play {
+  background-color: #ff9800;
+  margin-left: 10px;
+  min-width: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 300; /* Higher than the pause overlay to ensure it's clickable */
+  pointer-events: auto; /* Always allow click events on the button */
+}
+
+#pause-play:hover {
+  background-color: #f57c00;
+}
+
+#pause-play .fa-play,
+#pause-play .fa-pause {
+  font-size: 16px;
+}
+
+#pause-play.paused {
+  background-color: #4caf50;
+  width: auto;
+  min-width: 110px;
+}
+
+#pause-play.paused:hover {
+  background-color: #45a049;
+}
+
+#pause-play.paused .fa-play {
+  margin-right: 8px;
+}
+
+#pause-play.paused::after {
+  content: "Resume Game";
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 #start {
@@ -271,6 +373,7 @@ body {
   align-items: center;
   justify-content: center;
   line-height: 1;
+  pointer-events: auto;
 }
 
 .game-controls button:hover {

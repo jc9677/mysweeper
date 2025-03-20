@@ -16,8 +16,9 @@
       <label>💣 <input type="number" id="bombs" value="15" min="1" /></label>
       <i id="settings" class="fas fa-cog"></i>
     </div>
-    <div class="controls-row">
+    <div class="controls-row button-row">
       <button id="start">Start Game</button>
+      <button id="pause-play"><i class="fas fa-pause"></i></button>
     </div>
     <div class="controls-row">
       <div id="timer-container">
@@ -55,6 +56,11 @@
 
   <div id="game-container" class="game-container">
     <div id="game-board"></div>
+  </div>
+  <div id="pause-overlay" class="pause-overlay">
+    <div class="pause-message">
+      <div>Game Paused</div>
+    </div>
   </div>
   <div id="debug" class="debug-overlay hidden"></div>
   <script type="module" src="/main.js"></script>

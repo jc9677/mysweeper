@@ -13,11 +13,66 @@ let startX, startY, scrollLeft, scrollTop;
 let rows, cols, bombs;
 let gameActive = false;
 let isFirstMove = true;
+let isPaused = false; // Add new state variable for game pause
 
 // Timer variables
 let timerInterval = null;
 let elapsedSeconds = 0;
 let timerActive = false;
+
+// Define a function to save game state
+function saveGameState() {
+  const state = {
+    rows,
+    cols,
+    bombs,
+    boardState: Array.from(boardState),
+    adjacentCounts: Array.from(adjacentCounts),
+    isFirstMove,
+    elapsedSeconds,
+    gameActive,
+    isPaused
+  };
+  localStorage.setItem('minesweeperState', JSON.stringify(state));
+  console.log('Game state saved:', state);
+}
+
+// Function to load game state (can be called from anywhere)
+function loadGameState() {
+  const savedState = localStorage.getItem('minesweeperState');
+  if (savedState) {
+    try {
+      const state = JSON.parse(savedState);
+      console.log('Loading saved state:', state);
+      
+      rows = state.rows;
+      cols = state.cols;
+      bombs = state.bombs;
+      boardState = new Uint8Array(state.boardState);
+      adjacentCounts = new Uint8Array(state.adjacentCounts);
+      previousBoardState = new Uint8Array(rows * cols); // Reset this to force re-render
+      isFirstMove = state.isFirstMove !== undefined ? state.isFirstMove : false;
+      elapsedSeconds = state.elapsedSeconds || 0;
+      gameActive = state.gameActive !== undefined ? state.gameActive : true; // Default to active
+      isPaused = state.isPaused !== undefined ? state.isPaused : false;
+      
+      // Update UI for pause state if needed
+      if (isPaused) {
+        const icon = pausePlayButton.querySelector('i');
+        icon.classList.remove('fa-pause');
+        icon.classList.add('fa-play');
+        gameContainer.classList.add('paused');
+        pauseOverlay.classList.add('visible');
+      }
+      
+      return true;
+    } catch (e) {
+      console.error('Error loading saved state:', e);
+      return false;
+    }
+  }
+  return false;
+}
 
 // DOM-dependent code inside DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,9 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeSettings = document.getElementById('closeSettings');
   const showDebugCheckbox = document.getElementById('show-debug');
   const timerDisplay = document.getElementById('timer');
-
-  // Check if there's a saved game state
-  const savedState = localStorage.getItem('minesweeperState');
+  const pausePlayButton = document.getElementById('pause-play');
+  const pauseOverlay = document.getElementById('pause-overlay');
+  const resumeButton = document.getElementById('resume-button');
 
   // Load debug preference from localStorage
   let showDebug = localStorage.getItem('showDebug') === 'true';
@@ -109,12 +164,43 @@ document.addEventListener('DOMContentLoaded', () => {
     createBoard(rows, cols, bombs);
   });
 
-  // Initialize game from saved state if available
-  if (savedState) {
-    loadGameState();
-  } else {
-    // Create default game with 10 rows, 10 cols, and 15 bombs
-    createBoard(10, 10, 15);
+  // Initialize game
+  initializeGame();
+
+  // Add pause/play button functionality
+  pausePlayButton.addEventListener('click', togglePause);
+  
+  // Add resume button functionality
+  resumeButton.addEventListener('click', () => {
+    if (isPaused) {
+      togglePause();
+    }
+  });
+
+  function initializeGame() {
+    // Try to load saved game
+    if (loadGameState()) {
+      console.log('Loaded game state successfully');
+      // Update input fields with loaded values
+      rowsInput.value = rows;
+      colsInput.value = cols;
+      bombsInput.value = bombs;
+      
+      // Setup board with loaded state
+      setupBoard();
+      renderBoard(); // Force render the board
+      updateBombsRemaining();
+      updateTimerDisplay();
+      
+      // Resume timer if game is active and not the first move
+      if (gameActive && !isFirstMove) {
+        startTimer();
+      }
+    } else {
+      console.log('No saved game found, creating new game');
+      // Create default game
+      createBoard(10, 10, 15);
+    }
   }
 
   function handleWheel(e) {
@@ -249,6 +335,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupBoard();
     renderBoard();
+    
+    // Save the initial game state
     saveGameState();
   }
 
@@ -336,6 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!(boardState[index] & CELL_FLAGGED)) {
       revealCell(i, j, false);
+      saveGameState(); // Save state after revealing a cell
     }
   }
 
@@ -348,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!(boardState[index] & CELL_REVEALED)) {
       boardState[index] ^= CELL_FLAGGED;
       renderBoard();
-      updateBombsRemaining(); // Add this line
-      saveGameState();
+      updateBombsRemaining();
+      saveGameState(); // Save state after toggling a flag
     }
   }
 
@@ -444,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const i = Math.floor(index / cols);
           const j = index % cols;
           revealCell(i, j, false);
+          saveGameState(); // Save state after revealing a cell
         }
       }
     }
@@ -488,27 +578,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderBoard() {
     const cells = gameBoard.children;
+    
+    // Make sure we have cells to render to
+    if (!cells || cells.length === 0) {
+      console.error('No cells to render to!');
+      return;
+    }
+    
+    // Make sure the board is properly sized
+    if (cells.length !== rows * cols) {
+      console.error(`Cell count mismatch: ${cells.length} cells for ${rows}x${cols} board`);
+      return;
+    }
+    
     for (let i = 0; i < rows * cols; i++) {
-      // Only update cells that changed state
-      if (boardState[i] !== previousBoardState[i]) {
-        const cell = cells[i];
-        cell.className = 'cell';
-        cell.textContent = '';
+      // Force update all cells on first render or if previousBoardState is different
+      const cell = cells[i];
+      cell.className = 'cell';
+      cell.textContent = '';
 
-        if (boardState[i] & CELL_REVEALED) {
-          cell.classList.add('revealed');
-          if (boardState[i] & CELL_BOMB) {
-            cell.textContent = '💣';
-          } else if (adjacentCounts[i] > 0) {
-            cell.textContent = adjacentCounts[i];
-            cell.classList.add(`number-${adjacentCounts[i]}`);
-          }
-        } else if (boardState[i] & CELL_FLAGGED) {
-          cell.textContent = '🚩';
+      if (boardState[i] & CELL_REVEALED) {
+        cell.classList.add('revealed');
+        if (boardState[i] & CELL_BOMB) {
+          cell.textContent = '💣';
+        } else if (adjacentCounts[i] > 0) {
+          cell.textContent = adjacentCounts[i];
+          cell.classList.add(`number-${adjacentCounts[i]}`);
         }
-
-        previousBoardState[i] = boardState[i];
+      } else if (boardState[i] & CELL_FLAGGED) {
+        cell.textContent = '🚩';
       }
+
+      previousBoardState[i] = boardState[i];
     }
   }
 
@@ -525,6 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Start the timer on first move
       startTimer();
+      saveGameState(); // Save state after first move
     }
 
     boardState[index] |= CELL_REVEALED;
@@ -536,7 +638,7 @@ document.addEventListener('DOMContentLoaded', () => {
         boardState[idx] |= CELL_REVEALED;
       }
       renderBoard();
-      saveGameState();
+      saveGameState(); // Save state after game over
       showOverlay('Game Over! You hit a bomb!');
       return;
     }
@@ -553,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Only render and save if this is the initial reveal call
     if (!isRecursive) {
       renderBoard();
-      saveGameState();
+      saveGameState(); // Save state after revealing a cell
       checkWinCondition();
     }
   }
@@ -639,9 +741,47 @@ document.addEventListener('DOMContentLoaded', () => {
   function startTimer() {
     if (!timerActive) {
       timerActive = true;
-      timerInterval = setInterval(updateTimer, 1000);
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        updateTimerDisplay();
+        // Save only the elapsed seconds to localStorage without updating the full game state
+        saveTimerState();
+      }, 1000);
       updateTimerDisplay(); // Update immediately
     }
+  }
+
+  // Add a new function to save only the timer state
+  function saveTimerState() {
+    // Get current state from localStorage
+    const savedState = localStorage.getItem('minesweeperState');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        // Only update the elapsed seconds
+        state.elapsedSeconds = elapsedSeconds;
+        localStorage.setItem('minesweeperState', JSON.stringify(state));
+      } catch (e) {
+        console.error('Error updating timer state:', e);
+      }
+    }
+  }
+
+  // Update function to load timer state independently
+  function loadTimerState() {
+    const savedState = localStorage.getItem('minesweeperState');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        elapsedSeconds = state.elapsedSeconds || 0;
+        updateTimerDisplay();
+        return true;
+      } catch (e) {
+        console.error('Error loading timer state:', e);
+        return false;
+      }
+    }
+    return false;
   }
 
   function stopTimer() {
@@ -666,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resumeTimer() {
-    if (gameActive && !isFirstMove && !timerActive) {
+    if (gameActive && !isFirstMove && !timerActive && !isPaused) {
       startTimer();
     }
   }
@@ -688,53 +828,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleVisibilityChange() {
     if (document.hidden) {
-      pauseTimer();
+      if (!isPaused) pauseTimer();
     } else {
-      resumeTimer();
-    }
-  }
-
-  function saveGameState() {
-    const state = {
-      rows,
-      cols,
-      bombs,
-      boardState: Array.from(boardState),
-      adjacentCounts: Array.from(adjacentCounts),
-      isFirstMove,
-      elapsedSeconds,
-      gameActive
-    };
-    localStorage.setItem('minesweeperState', JSON.stringify(state));
-  }
-
-  function loadGameState() {
-    if (savedState) {
-      const state = JSON.parse(savedState);
-      rows = state.rows;
-      cols = state.cols;
-      bombs = state.bombs;
-      boardState = new Uint8Array(state.boardState);
-      adjacentCounts = new Uint8Array(state.adjacentCounts);
-      previousBoardState = new Uint8Array(state.boardState);
-      isFirstMove = state.isFirstMove !== undefined ? state.isFirstMove : false;
-      elapsedSeconds = state.elapsedSeconds || 0;
-      gameActive = state.gameActive !== undefined ? state.gameActive : false;
-
-      rowsInput.value = rows;
-      colsInput.value = cols;
-      bombsInput.value = bombs;
-      setupBoard();
-      renderBoard();
-      updateBombsRemaining(); // Add this line
-
-      // Update timer display
-      updateTimerDisplay();
-
-      // Resume timer if game is active and not the first move
-      if (gameActive && !isFirstMove && document.visibilityState === 'visible') {
-        startTimer();
-      }
+      resumeTimer(); // This will only resume if !isPaused
     }
   }
 
@@ -754,6 +850,58 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       overlay.classList.add('hidden');
+    }
+  });
+
+  function togglePause() {
+    if (!gameActive || isFirstMove) return; // Don't pause if game isn't active or hasn't started
+    
+    isPaused = !isPaused;
+    
+    // Update button icon and text
+    const pausePlayBtn = pausePlayButton;
+    const icon = pausePlayBtn.querySelector('i');
+    
+    if (isPaused) {
+      icon.classList.remove('fa-pause');
+      icon.classList.add('fa-play');
+      pausePlayBtn.classList.add('paused');
+      pauseTimer();
+      gameContainer.classList.add('paused');
+      pauseOverlay.classList.add('visible');
+    } else {
+      icon.classList.remove('fa-play');
+      icon.classList.add('fa-pause');
+      pausePlayBtn.classList.remove('paused');
+      resumeTimer();
+      gameContainer.classList.remove('paused');
+      pauseOverlay.classList.remove('visible');
+    }
+    
+    // Save the pause state in localStorage
+    savePauseState();
+  }
+  
+  function savePauseState() {
+    const savedState = localStorage.getItem('minesweeperState');
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        state.isPaused = isPaused;
+        localStorage.setItem('minesweeperState', JSON.stringify(state));
+      } catch (e) {
+        console.error('Error saving pause state:', e);
+      }
+    }
+  }
+
+  // Add keypress handler for space to toggle pause
+  window.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault(); // Prevent scrolling on space
+      if (gameActive && !isFirstMove) {
+        togglePause();
+      }
     }
   });
 });
