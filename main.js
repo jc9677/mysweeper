@@ -126,12 +126,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Enhance zooming and scrolling functionality
   function updateScale(newScale, e) {
-    newScale = Math.min(Math.max(newScale, 0.5), 3);
+    newScale = Math.min(Math.max(newScale, 0.5), 3); // Limit zoom levels
     if (newScale === scale) return;
+
+    const rect = gameBoard.getBoundingClientRect();
+    const offsetX = (e.clientX - rect.left) / scale;
+    const offsetY = (e.clientY - rect.top) / scale;
 
     scale = newScale;
     gameBoard.style.transform = `scale(${scale})`;
+
+    // Adjust scroll to keep the zoom centered around the cursor
+    const newRect = gameBoard.getBoundingClientRect();
+    const newOffsetX = (e.clientX - newRect.left) / scale;
+    const newOffsetY = (e.clientY - newRect.top) / scale;
+
+    gameContainer.scrollLeft += (offsetX - newOffsetX) * scale;
+    gameContainer.scrollTop += (offsetY - newOffsetY) * scale;
   }
 
   function handleDragStart(e) {
@@ -147,12 +160,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleDragMove(e) {
     if (!isDragging) return;
     e.preventDefault();
+
     const x = e.pageX - gameContainer.offsetLeft;
     const y = e.pageY - gameContainer.offsetTop;
     const walkX = (x - startX);
     const walkY = (y - startY);
+
     gameContainer.scrollLeft = scrollLeft - walkX;
     gameContainer.scrollTop = scrollTop - walkY;
+
+    // Add inertia for smoother scrolling
+    requestAnimationFrame(() => {
+      gameContainer.scrollLeft = scrollLeft - walkX * 0.9;
+      gameContainer.scrollTop = scrollTop - walkY * 0.9;
+    });
   }
 
   function handleDragEnd() {
